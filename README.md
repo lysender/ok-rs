@@ -2,6 +2,8 @@
 
 HTTP server that responds with OK, sometimes it echos.
 
+Note: This is for development purposes only.
+
 ## Installation
 
 Build using cargo:
