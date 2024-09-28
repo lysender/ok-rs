@@ -17,9 +17,6 @@ you can just run it directly.
 
 ```bash
 ok-rs --port 4200
-
-# Windows
-ok-rs.exe --port 4200
 ```
 
 ## Usage 
