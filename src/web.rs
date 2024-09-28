@@ -1,6 +1,7 @@
-use axum::body::Body;
+use axum::http::Method;
 use axum::response::Response;
 use axum::Router;
+use axum::{body::Body, http::HeaderMap};
 use tokio::net::TcpListener;
 use tower::ServiceBuilder;
 use tower_http::trace::{DefaultMakeSpan, DefaultOnResponse, TraceLayer};
@@ -20,7 +21,7 @@ pub async fn start_server(port: u16) -> Result<()> {
     // Setup the server
     let ip = "127.0.0.1";
     let addr = format!("{}:{}", ip, port);
-    info!("Listening on {}", addr);
+    info!("HTTP server started at {}", addr);
 
     let listener = TcpListener::bind(addr).await.unwrap();
     axum::serve(listener, routes.into_make_service())
@@ -30,10 +31,32 @@ pub async fn start_server(port: u16) -> Result<()> {
     Ok(())
 }
 
-async fn ok_handler() -> Response<Body> {
-    let content = "OK";
+async fn ok_handler(headers: HeaderMap, method: Method, body: Body) -> Response<Body> {
+    let mut status: u16 = 200;
+    let mut content = Body::from("OK");
+    let mut content_type = String::from("text/plain; charset=UTF8");
+
+    // For POST, PUT and PATCH requests, send back the body if there are any
+    // Otherwise, just send OK
+    if method == "POST" || method == "PUT" || method == "PATCH" {
+        // There must be a content-type in the header in order to proceed
+        match headers.get("content-type") {
+            Some(ct) => {
+                content_type = ct.to_str().unwrap().to_string();
+                content = body;
+            }
+            None => {
+                status = 400;
+                content = Body::from(
+                    "Content-Type header is required to echo back POST/PUT/PATCH requests.",
+                );
+            }
+        }
+    }
+
     Response::builder()
-        .status(200)
-        .body(Body::from(content))
+        .header("Content-Type", content_type.as_str())
+        .status(status)
+        .body(content)
         .unwrap()
 }
