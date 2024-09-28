@@ -4,3 +4,20 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
+axum = { version = "0.7.7", features = ["macros"] }
+clap = { version = "4.5.18", features = ["derive"] }
+derive_more = { version = "1.0.0", features = ["from", "full"] }
+serde = "1.0.210"
+tokio = { version = "1.40.0", features = ["full"] }
+tower = "0.5.1"
+tower-http = { version = "0.6.1", features = ["trace"] }
+tracing = "0.1.40"
+tracing-subscriber = "0.3.18"
+
+[profile.dev]
+debug = 0
+
+[profile.release]
+lto = true
+codegen-units = 1
+panic = "abort"
