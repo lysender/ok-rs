@@ -16,7 +16,10 @@ You can copy the binary into your `$PATH` to run it anywhere or
 you can just run it directly.
 
 ```bash
-./ok-rs --port 4200
+ok-rs --port 4200
+
+# Windows
+ok-rs.exe --port 4200
 ```
 
 ## Usage 
