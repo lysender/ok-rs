@@ -32,31 +32,21 @@ pub async fn start_server(port: u16) -> Result<()> {
 }
 
 async fn ok_handler(headers: HeaderMap, method: Method, body: Body) -> Response<Body> {
-    let mut status: u16 = 200;
     let mut content = Body::from("OK");
-    let mut content_type = String::from("text/plain; charset=UTF8");
+    let mut content_type = "text/plain; charset=UTF8";
 
-    // For POST, PUT and PATCH requests, send back the body if there are any
+    // For POST, PUT and PATCH requests, send back the body if JSON
     // Otherwise, just send OK
     if method == "POST" || method == "PUT" || method == "PATCH" {
-        // There must be a content-type in the header in order to proceed
-        match headers.get("content-type") {
-            Some(ct) => {
-                content_type = ct.to_str().unwrap().to_string();
-                content = body;
-            }
-            None => {
-                status = 400;
-                content = Body::from(
-                    "Content-Type header is required to echo back POST/PUT/PATCH requests.",
-                );
-            }
+        if let Some("application/json") = headers.get("content-type").map(|c| c.to_str().unwrap()) {
+            content_type = "application/json";
+            content = body;
         }
     }
 
     Response::builder()
-        .header("Content-Type", content_type.as_str())
-        .status(status)
+        .header("Content-Type", content_type)
+        .status(200)
         .body(content)
         .unwrap()
 }
