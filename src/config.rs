@@ -6,6 +6,9 @@ pub const RUST_LOG: &str = "RUST_LOG";
 #[derive(Parser, Debug)]
 #[command(author, version, about, long_about = None)]
 pub struct AppArgs {
+    #[arg(long, value_name = "HOST")]
+    pub host: Option<String>,
+
     #[arg(short, long, value_name = "PORT")]
     pub port: u16,
 }

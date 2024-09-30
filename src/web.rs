@@ -7,9 +7,10 @@ use tower::ServiceBuilder;
 use tower_http::trace::{DefaultMakeSpan, DefaultOnResponse, TraceLayer};
 use tracing::{info, Level};
 
+use crate::config::AppArgs;
 use crate::Result;
 
-pub async fn start_server(port: u16) -> Result<()> {
+pub async fn start_server(args: AppArgs) -> Result<()> {
     let routes = Router::new().fallback(ok_handler).layer(
         ServiceBuilder::new().layer(
             TraceLayer::new_for_http()
@@ -19,8 +20,8 @@ pub async fn start_server(port: u16) -> Result<()> {
     );
 
     // Setup the server
-    let ip = "127.0.0.1";
-    let addr = format!("{}:{}", ip, port);
+    let host = args.host.unwrap_or("127.0.0.1".to_string());
+    let addr = format!("{}:{}", host, args.port);
     info!("HTTP server started at {}", addr);
 
     let listener = TcpListener::bind(addr).await.unwrap();

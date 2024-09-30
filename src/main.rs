@@ -24,5 +24,5 @@ async fn main() {
 
     let args = AppArgs::parse();
 
-    let _ = start_server(args.port).await;
+    let _ = start_server(args).await;
 }
