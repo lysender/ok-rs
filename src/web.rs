@@ -1,17 +1,34 @@
+use axum::Router;
+use axum::extract::{FromRef, State};
 use axum::http::Method;
 use axum::response::Response;
-use axum::Router;
+use axum::routing::any;
 use axum::{body::Body, http::HeaderMap};
 use tokio::net::TcpListener;
 use tower::ServiceBuilder;
 use tower_http::trace::{DefaultMakeSpan, DefaultOnResponse, TraceLayer};
-use tracing::{info, Level};
+use tracing::{Level, info};
 
-use crate::config::AppArgs;
 use crate::Result;
+use crate::config::AppArgs;
+
+#[derive(Clone)]
+pub struct Config {
+    pub debug_headers: bool,
+}
+
+#[derive(Clone, FromRef)]
+pub struct AppState {
+    pub config: Config,
+}
 
 pub async fn start_server(args: AppArgs) -> Result<()> {
-    let routes = Router::new().fallback(ok_handler).layer(
+    let config = Config {
+        debug_headers: args.debug_headers,
+    };
+    let state = AppState { config };
+
+    let routes = Router::new().merge(ok_routes(state)).layer(
         ServiceBuilder::new().layer(
             TraceLayer::new_for_http()
                 .make_span_with(DefaultMakeSpan::new().level(Level::INFO))
@@ -32,7 +49,19 @@ pub async fn start_server(args: AppArgs) -> Result<()> {
     Ok(())
 }
 
-async fn ok_handler(headers: HeaderMap, method: Method, body: Body) -> Response<Body> {
+fn ok_routes(state: AppState) -> Router {
+    Router::new()
+        .route("/", any(ok_handler))
+        .fallback(any(ok_handler))
+        .with_state(state)
+}
+
+async fn ok_handler(
+    state: State<AppState>,
+    headers: HeaderMap,
+    method: Method,
+    body: Body,
+) -> Response<Body> {
     let mut content = Body::from("OK");
     let mut content_type = "text/plain; charset=UTF8";
 
@@ -43,6 +72,10 @@ async fn ok_handler(headers: HeaderMap, method: Method, body: Body) -> Response<
             content_type = "application/json";
             content = body;
         }
+    }
+
+    if state.config.debug_headers {
+        info!("Request Headers: {:#?}", headers);
     }
 
     Response::builder()
